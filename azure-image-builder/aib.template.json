@@ -1,0 +1,106 @@
+{
+    "type": "Microsoft.VirtualMachineImages/imageTemplates",
+    "apiVersion": "2019-05-01-preview",
+    "location": "westus2",
+    "dependsOn": [],
+    "tags": {
+        "imagebuilderTemplate": "aibToSig19"
+    },
+    "properties": {
+        "buildTimeoutInMinutes": 180,
+        "source": {
+            "type": "PlatformImage",
+            "publisher": "Canonical",
+            "offer": "UbuntuServer",
+            "sku": "18.04-LTS",
+            "version": "18.04.201910210"
+        },
+        "customize": [
+            {
+                "type": "Shell",
+                "name": "InstallDependencies",
+                "inline": [
+                    "sudo apt-get -y upgrade",
+                    "sudo apt-get -y update",
+                    "sudo apt-get -y dist-upgrade",
+                    "sudo apt install nginx -y",
+                    "sudo apt install nodejs -y",
+                    "sudo apt install npm -y",
+                    "sudo mkdir -p /var/www/azuremetadata",
+                    "cd /var/www/azuremetadata",
+                    "sudo npm install express -y",
+                    "sudo npm install nodemon -y",
+                    "sudo npm install ejs -y"
+                    
+                ]
+            },
+            {
+                "type": "File",
+                "name": "downloadNginxConfig",
+                "sourceUri": "https://gist.githubusercontent.com/fitzgeraldsteele/7225e94d5fa9f91779908160b96d38c7/raw/f700f9def7a1acb2c4eff23ee84a7e0cde6a015b/default-nginx-config",
+                "destination": "/tmp/default"
+            },
+            {
+                "type": "Shell",
+                "name": "moveFilesWorkaroundServer",
+                "inline": [
+                    "sudo mv /tmp/default /etc/nginx/sites-available/default"
+                ]
+            },
+            {
+                "type": "File",
+                "name": "downloadExpressJSSite",
+                "sourceUri": "https://gist.githubusercontent.com/fitzgeraldsteele/248e2b7c9178258109de21a03847c546/raw/e24d885bd41782d8084486f5bdf37829ea9f718d/app.js",
+                "destination": "/tmp/app.js"
+                
+            },
+            {
+                "type": "Shell",
+                "name": "moveFilesWorkaroundApp",
+                "inline": [
+                    "sudo mv /tmp/app.js /var/www/azuremetadata/app.js"
+                ]
+            },
+            {
+                "type": "File",
+                "name": "downloadServiceFile",
+                "sourceUri": "https://gist.githubusercontent.com/fitzgeraldsteele/b587258eaa221fa4ae12929c5ea0a814/raw/4dc26483b72061508a2b1bd3ba6e216337b472fe/azuremetadata.service",
+                "destination": "/tmp/azuremetadata.service"
+                
+            },
+            {
+                "type": "Shell",
+                "name": "moveFilesWorkaroundservice",
+                "inline": [
+                    "sudo mv /tmp/azuremetadata.service /etc/systemd/system/azuremetadata.service"
+                ]
+            },
+            {
+                "type": "Shell",
+                "name": "completeInstallation",
+                "inline": [
+                    "service nginx restart",
+                    "sudo systemctl daemon-reload",
+                    "sudo systemctl enable azuremetadata",
+                    "sudo systemctl restart azuremetadata"
+                ]
+            }
+        ],
+        "distribute": [
+            {
+                "type": "SharedImage",
+                "galleryImageId": "/subscriptions/576f5e67-b043-4ec9-81e9-47c7e8692cc4/resourceGroups/aibtest1/providers/Microsoft.Compute/galleries/aibgallery1/images/aibimage1",
+                "location": "westus2",
+                "replicationRegions": [
+                    "westus2"
+                ],
+                "runOutputName": "aiboutput3",
+                "artifactTags": {
+                    "source": "azVmImageBuilder",
+                    "baseosimg": "ubuntu1804",
+                    "imageBuilderTemplate": "aigToSig19"
+                }
+            }
+        ]
+    }
+}
