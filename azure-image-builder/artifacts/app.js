@@ -31,6 +31,24 @@ app.get('/', function (req, res) {
     }
   })
 })
+app.get('/meta', function (req, res) {
+        const request = require('request');
+        const options = {
+          url: 'http://169.254.169.254/metadata/instance?api-version=2019-03-11',
+          headers: {
+            'Metadata': 'true'
+          }
+        };
+        request(options, function (error, response, body) {
+          if (!error && response.statusCode == 200) {
+            res.set('Content-Type', 'application/json');
+            res.send(body)
+          }
+          else {
+            console.log("Error " + response.statusCode)
+          }
+        })
+      })
 app.get('/health', function (req, res) {
   res.send('PONG!')
 })
